@@ -25,9 +25,7 @@
 #include "Arduino.h"
 #include <Wire.h>
 #include <FunctionalInterrupt.h>
-
 #include "CST816S.h"
-
 
 /*!
     @brief  Constructor for CST816S
@@ -45,21 +43,37 @@ CST816S::CST816S(int sda, int scl, int rst, int irq) {
   _scl = scl;
   _rst = rst;
   _irq = irq;
-
 }
 
 /*!
     @brief  read touch data
 */
 void CST816S::read_touch() {
+  byte bitMask = 00000001;
   byte data_raw[8];
   i2c_read(CST816S_ADDRESS, 0x01, data_raw, 6);
 
   data.gestureID = data_raw[0];
   data.points = data_raw[1];
   data.event = data_raw[2] >> 6;
-  data.x = data_raw[3];
-  data.y = data_raw[5];
+  switch (_rotation) {      
+        case 0:
+          data.x = ((data_raw[2] & bitMask) * 256) + data_raw[3];
+          data.y = ((data_raw[4] & bitMask) * 256) + data_raw[5];
+          break;
+        case 1:
+          data.x = ((data_raw[4] & bitMask) * 256) + data_raw[5]; //ok
+          data.y = map((((data_raw[2] & bitMask) * 256) + data_raw[3]), 0, TFT_WIDTH, TFT_WIDTH, 0);
+          break;
+        case 2:
+          data.x = map(((data_raw[2] & bitMask) * 256) + data_raw[3], 0, TFT_WIDTH, TFT_WIDTH, 0);
+          data.y = map(((data_raw[4] & bitMask) * 256) + data_raw[5], 0, TFT_HEIGHT, TFT_HEIGHT, 0);
+          break;
+        case 3:
+          data.x = map(((data_raw[4] & bitMask) * 256) + data_raw[5], 0, TFT_HEIGHT, TFT_HEIGHT, 0);
+          data.y = ((data_raw[2] & bitMask) * 256) + data_raw[3];
+          break;
+  }
 }
 
 /*!
@@ -67,7 +81,6 @@ void CST816S::read_touch() {
 */
 void IRAM_ATTR CST816S::handleISR(void) {
   _event_available = true;
-
 }
 
 /*!
@@ -128,16 +141,68 @@ String CST816S::gesture() {
       return "NONE";
       break;
     case SWIPE_DOWN:
-      return "SWIPE DOWN";
+      switch (_rotation) {      
+        case 0:
+          return "U";
+          break;
+        case 1:
+          return "L";
+          break;
+        case 2:
+          return "D";
+          break;
+        case 3:
+          return "R";
+          break;
+      }
       break;
     case SWIPE_UP:
-      return "SWIPE UP";
+      switch (_rotation) {      
+        case 0:
+          return "D";
+          break;
+        case 1:
+          return "R";
+          break;
+        case 2:
+          return "U";
+          break;
+        case 3:
+          return "L";
+          break;
+      }
       break;
     case SWIPE_LEFT:
-      return "SWIPE LEFT";
+      switch (_rotation) {      
+        case 0:
+          return "R";
+          break;
+        case 1:
+          return "U";
+          break;
+        case 2:
+          return "L";
+          break;
+        case 3:
+          return "D";
+          break;
+      }
       break;
     case SWIPE_RIGHT:
-      return "SWIPE RIGHT";
+      switch (_rotation) {      
+        case 0:
+          return "L";
+          break;
+        case 1:
+          return "D";
+          break;
+        case 2:
+          return "R";
+          break;
+        case 3:
+          return "U";
+          break;
+      }
       break;
     case SINGLE_CLICK:
       return "SINGLE CLICK";
@@ -198,4 +263,14 @@ uint8_t CST816S::i2c_write(uint8_t addr, uint8_t reg_addr, const uint8_t *reg_da
   }
   if ( Wire.endTransmission(true))return -1;
   return 0;
+}
+
+/*!
+    @brief  set rotation
+	@param	rotation
+			rotation in TFT_eSPI
+*/
+void CST816S::setRotation(uint8_t rotation)
+{
+  _rotation = rotation;
 }
