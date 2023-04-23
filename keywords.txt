@@ -5,6 +5,7 @@ available				KEYWORD2
 sleep					KEYWORD2
 begin					KEYWORD2
 gesture					KEYWORD2
+setRotation           			KEYWORD2
 
 NONE					LITERAL1
 SWIPE_DOWN				LITERAL1
