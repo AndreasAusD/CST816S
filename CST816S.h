@@ -25,16 +25,14 @@
 #ifndef CST816S_H
 #define CST816S_H
 
-#include <Arduino.h>
-
 #define CST816S_ADDRESS     0x15
 
 enum GESTURE {
   NONE = 0x00,
   SWIPE_UP = 0x01,
   SWIPE_DOWN = 0x02,
-  SWIPE_LEFT = 0x03,
-  SWIPE_RIGHT = 0x04,
+  SWIPE_LEFT = 0x04,
+  SWIPE_RIGHT = 0x03,
   SINGLE_CLICK = 0x05,
   DOUBLE_CLICK = 0x0B,
   LONG_PRESS = 0x0C
@@ -51,8 +49,6 @@ struct data_struct {
   uint8_t versionInfo[3];
 };
 
-
-
 class CST816S {
 
   public:
@@ -62,6 +58,7 @@ class CST816S {
     bool available();
     data_struct data;
     String gesture();
+    void setRotation(uint8_t rotation);
 
 
   private:
@@ -69,6 +66,7 @@ class CST816S {
     int _scl;
     int _rst;
     int _irq;
+    uint8_t _rotation;
     bool _event_available;
 
     void IRAM_ATTR handleISR();
